@@ -1,0 +1,1 @@
+# Put one full destination URL on the next line, for example: https://example.com/offer

@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0803" />
+  <meta name="description" content="A modern dating discovery experience." />
+  <title>MIRA — Discover</title>
+
+  <!-- Tailwind CDN for utility support; the app's visual system is defined below. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <!-- Gilroy is a commercial font. Manrope is used as a close, clean geometric alternative. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --ink: #0a0803;
+      --panel: #15130d;
+      --panel-2: #1c1a13;
+      --panel-3: #242116;
+      --red: #d64141;
+      --lime: #d0fb95;
+      --white: #ffffff;
+      --muted: #aaa99f;
+      --line: rgba(255,255,255,.10);
+      --line-strong: rgba(255,255,255,.17);
+      --radius: 22px;
+      --shadow: 0 24px 70px rgba(0,0,0,.38);
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--ink); scroll-behavior: smooth; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--white);
+      background:
+        radial-gradient(ellipse at 52% -18%, rgba(208,251,149,.075), transparent 38%),
+        radial-gradient(ellipse at 100% 42%, rgba(214,65,65,.045), transparent 34%),
+        var(--ink);
+      font-family: "Manrope", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--lime); outline-offset: 3px;
+    }
+    .app-header {
+      height: 78px; position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(18px, 4vw, 56px);
+      background: rgba(10,8,3,.84); backdrop-filter: blur(22px);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display:flex; align-items:center; gap:11px; min-width: 220px; }
+    .brand-mark {
+      width: 34px; height: 34px; border-radius: 11px; background: var(--lime);
+      display:grid; place-items:center; color: var(--ink); font-size: 15px;
+      transform: rotate(-8deg); box-shadow: 0 0 24px rgba(208,251,149,.16);
+    }
+    .brand-name { font-size: 22px; font-weight: 800; letter-spacing: -.09em; }
+    .brand-name span { color: var(--lime); }
+    .header-nav { display:flex; align-items:center; gap: 7px; }
+    .nav-btn {
+      border: 0; color: #a8a69b; background: transparent; padding: 11px 16px;
+      border-radius: 999px; font-size: 13px; font-weight: 700; transition: .2s;
+    }
+    .nav-btn:hover { color: white; background: rgba(255,255,255,.06); }
+    .nav-btn.active { color: var(--white); background: rgba(255,255,255,.09); }
+    .nav-btn.active::after { content:""; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--lime); margin:0 0 1px 8px; }
+    .header-actions { display:flex; align-items:center; justify-content:flex-end; gap: 10px; min-width:220px; }
+    .city-select, .header-icon, .avatar-btn {
+      height: 40px; border: 1px solid var(--line); color: white; background: rgba(255,255,255,.035);
+      border-radius: 999px;
+    }
+    .city-select { padding: 0 13px; font-size: 12px; color: #e6e4db; max-width: 150px; }
+    .city-select option { background:#15130d; }
+    .header-icon { width:40px; display:grid; place-items:center; color:#d6d4ca; position:relative; }
+    .header-icon:hover { background:rgba(255,255,255,.1); }
+    .avatar-btn { width:40px; height:40px; padding:0; overflow:hidden; border:2px solid rgba(208,251,149,.65); }
+    .avatar-btn img { width:100%; height:100%; object-fit:cover; }
+    .redirect-pill {
+      display:flex; align-items:center; gap:8px; border:1px solid rgba(208,251,149,.24);
+      border-radius:999px; padding:9px 13px; color:var(--lime); background:rgba(208,251,149,.07);
+      font-size:11px; font-weight:800; letter-spacing:.01em; white-space:nowrap;
+    }
+    .redirect-dot { width:7px; height:7px; border-radius:50%; background:#777; box-shadow:0 0 0 3px rgba(255,255,255,.06); }
+    .location-indicator {
+      height:36px; max-width:170px; display:flex; align-items:center; gap:7px;
+      padding:0 10px; border:1px solid var(--line); border-radius:999px;
+      background:rgba(255,255,255,.035); color:#c7c5bb; font-size:10px;
+      font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .location-indicator i { color:var(--lime); font-size:11px; }
+    .location-indicator:hover { background:rgba(255,255,255,.08); border-color:var(--line-strong); }
+    .location-indicator.locating i { animation:locationPulse 1.1s ease-in-out infinite; }
+    .location-indicator.failed i { color:#e59b91; }
+    @keyframes locationPulse { 50% { opacity:.35; transform:scale(.85); } }
+    .redirect-pill.ready .redirect-dot { background:var(--lime); box-shadow:0 0 0 3px rgba(208,251,149,.13); }
+    .redirect-pill.missing { color:#e8b0a9; border-color:rgba(214,65,65,.25); background:rgba(214,65,65,.07); }
+    .redirect-pill.missing .redirect-dot { background:var(--red); }
+    .app-shell {
+      width:min(1460px, 100%); margin:0 auto; padding: 30px clamp(16px, 3vw, 42px) 110px;
+      display:grid; grid-template-columns: 228px minmax(390px, 1fr) 310px; gap:26px; align-items:start;
+    }
+    .left-rail, .right-rail { position:sticky; top:104px; }
+    .surface {
+      background:linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018));
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow: 0 14px 42px rgba(0,0,0,.14);
+    }
+    .rail-profile { padding:17px; display:flex; gap:12px; align-items:center; margin-bottom:16px; }
+    .rail-profile img { width:45px; height:45px; border-radius:50%; object-fit:cover; }
+    .rail-profile strong { display:block; font-size:13px; }
+    .rail-profile small { color:var(--muted); font-size:10px; display:block; margin-top:3px; }
+    .online-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--lime); margin-right:5px; }
+    .rail-nav { padding:9px; margin-bottom:16px; }
+    .rail-link {
+      width:100%; border:0; background:transparent; color:#aaa99f; display:flex; align-items:center;
+      gap:13px; padding:13px 12px; border-radius:13px; font-size:12px; font-weight:700; text-align:left;
+      transition:.2s;
+    }
+    .rail-link i { width:17px; text-align:center; font-size:14px; }
+    .rail-link:hover { background:rgba(255,255,255,.05); color:white; }
+    .rail-link.active { background:rgba(208,251,149,.11); color:var(--lime); }
+    .rail-link .count { margin-left:auto; color:#858378; font-size:10px; }
+    .filter-panel { padding:17px; }
+    .panel-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; }
+    .panel-heading h3 { margin:0; font-size:12px; font-weight:800; letter-spacing:.01em; }
+    .subtle-link { border:0; background:transparent; color:var(--lime); font-size:10px; font-weight:800; }
+    .filter-label { color:#aaa99f; font-size:10px; display:flex; justify-content:space-between; margin:14px 0 8px; }
+    .filter-label strong { color:#eee; font-size:10px; }
+    input[type=range] { width:100%; accent-color:var(--lime); height:4px; }
+    .filter-select {
+      width:100%; height:39px; border:1px solid var(--line); border-radius:11px;
+      background:#17150f; color:#e8e6dc; padding:0 10px; font-size:11px;
+    }
+    .interest-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+    .interest-chip { border:1px solid var(--line); background:transparent; color:#aaa99f; border-radius:999px; padding:7px 9px; font-size:9px; }
+    .interest-chip.selected { color:var(--ink); background:var(--lime); border-color:var(--lime); font-weight:800; }
+    .center-column { min-width:0; }
+    .view-head { display:flex; align-items:flex-end; justify-content:space-between; margin:0 0 18px; }
+    .eyebrow { color:var(--lime); font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.16em; }
+    .view-head h1 { margin:5px 0 0; font-size:27px; line-height:1.15; letter-spacing:-.055em; font-weight:800; }
+    .view-head p { margin:6px 0 0; color:var(--muted); font-size:11px; }
+    .view-tools { display:flex; align-items:center; gap:8px; }
+    .soft-btn { height:36px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.04); color:#ddd; padding:0 12px; font-size:10px; font-weight:700; }
+    .soft-btn:hover { border-color:var(--line-strong); background:rgba(255,255,255,.08); }
+    .discovery-tabs { display:flex; gap:7px; padding:4px; background:rgba(255,255,255,.035); border:1px solid var(--line); border-radius:999px; width:max-content; margin:0 auto 14px; }
+    .discovery-tab { border:0; background:transparent; color:#96948a; padding:9px 19px; border-radius:999px; font-size:11px; font-weight:800; }
+    .discovery-tab.active { color:var(--ink); background:var(--lime); box-shadow:0 5px 18px rgba(208,251,149,.14); }
+    .swipe-stage { width:min(100%, 520px); margin:0 auto; position:relative; }
+    .profile-card {
+      height:min(66vh, 650px); min-height:490px; width:100%; position:relative; overflow:hidden;
+      border-radius:25px; background:#25251f; border:1px solid rgba(255,255,255,.14);
+      box-shadow:var(--shadow); isolation:isolate; touch-action:pan-y; user-select:none;
+    }
+    .profile-card::after {
+      content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+      background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,transparent 22%,transparent 42%,rgba(0,0,0,.12) 58%,rgba(0,0,0,.88) 100%);
+    }
+    .profile-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 30%; opacity:0; transition:opacity .3s ease, transform .55s ease; }
+    .profile-image.loaded { opacity:1; }
+    .image-skeleton { position:absolute; inset:0; background:linear-gradient(110deg,#26251e 8%,#35342b 18%,#26251e 33%); background-size:200% 100%; animation:shimmer 1.5s linear infinite; }
+    @keyframes shimmer { to { background-position-x:-200%; } }
+    .card-top { position:absolute; top:15px; left:16px; right:16px; z-index:3; display:flex; align-items:center; gap:5px; }
+    .story-segment { height:3px; flex:1; border-radius:8px; background:rgba(255,255,255,.34); overflow:hidden; }
+    .story-segment.active { background:white; }
+    .card-top-actions { position:absolute; top:31px; left:17px; right:17px; z-index:3; display:flex; justify-content:space-between; align-items:center; }
+    .status-tag, .score-tag { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border-radius:999px; background:rgba(10,8,3,.58); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.16); font-size:9px; font-weight:800; }
+    .status-tag i { color:var(--lime); font-size:7px; }
+    .score-tag { color:var(--ink); background:var(--lime); border-color:transparent; }
+    .photo-zone { position:absolute; z-index:2; top:75px; bottom:150px; width:35%; border:0; background:transparent; }
+    .photo-zone.prev { left:0; } .photo-zone.next { right:0; }
+    .photo-counter { position:absolute; z-index:3; right:17px; bottom:147px; font-size:10px; color:rgba(255,255,255,.82); text-shadow:0 1px 8px #000; }
+    .profile-info { position:absolute; z-index:3; left:24px; right:24px; bottom:25px; }
+    .profile-name-line { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+    .profile-name-line h2 { margin:0; font-size:31px; line-height:1.1; font-weight:800; letter-spacing:-.06em; text-shadow:0 2px 15px rgba(0,0,0,.3); }
+    .verified { width:18px; height:18px; border-radius:50%; background:#6da9ff; display:grid; place-items:center; font-size:9px; }
+    .profile-subline { display:flex; align-items:center; gap:12px; margin-top:9px; color:rgba(255,255,255,.88); font-size:11px; }
+    .profile-subline span { display:flex; align-items:center; gap:6px; }
+    .profile-bio { color:rgba(255,255,255,.84); font-size:11px; line-height:1.6; margin:13px 0 11px; max-width:390px; }
+    .profile-tags { display:flex; flex-wrap:wrap; gap:6px; }
+    .profile-tag { color:#fff; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.2); backdrop-filter:blur(10px); padding:6px 9px; border-radius:999px; font-size:9px; }
+    .swipe-stamp { position:absolute; z-index:4; top:100px; padding:9px 15px; border:3px solid; border-radius:10px; font-size:24px; font-weight:800; letter-spacing:.1em; opacity:0; transform:rotate(-14deg) scale(.8); pointer-events:none; }
+    .swipe-stamp.like { right:25px; color:var(--lime); border-color:var(--lime); }
+    .swipe-stamp.nope { left:25px; color:#ff7777; border-color:#ff7777; transform:rotate(14deg) scale(.8); }
+    .swipe-stamp.super { left:50%; color:#fff; border-color:#fff; transform:translateX(-50%) rotate(-8deg) scale(.8); }
+    .profile-card.swiping-right { animation:swipeRight .38s ease forwards; }
+    .profile-card.swiping-left { animation:swipeLeft .38s ease forwards; }
+    .profile-card.swiping-up { animation:swipeUp .38s ease forwards; }
+    @keyframes swipeRight { to { transform:translateX(125%) rotate(18deg); opacity:0; } }
+    @keyframes swipeLeft { to { transform:translateX(-125%) rotate(-18deg); opacity:0; } }
+    @keyframes swipeUp { to { transform:translateY(-125%) rotate(8deg); opacity:0; } }
+    .action-row { display:flex; align-items:center; justify-content:center; gap:15px; margin:18px 0 0; }
+    .action-button {
+      border:1px solid rgba(255,255,255,.14); background:linear-gradient(145deg,#222018,#14120c);
+      color:white; border-radius:50%; width:54px; height:54px; display:grid; place-items:center;
+      box-shadow:0 9px 24px rgba(0,0,0,.28); transition:transform .18s, box-shadow .18s, border-color .18s;
+    }
+    .action-button:hover { transform:translateY(-4px); border-color:rgba(255,255,255,.3); box-shadow:0 13px 28px rgba(0,0,0,.35); }
+    .action-button:active { transform:scale(.93); }
+    .action-button.pass { color:#ff7777; }
+    .action-button.like { width:66px; height:66px; color:var(--red); background:var(--white); border:0; font-size:22px; box-shadow:0 8px 30px rgba(214,65,65,.16); }
+    .action-button.super { color:#d5c4ff; }
+    .action-button.message { color:#fff; }
+    .action-hint { text-align:center; color:#77756b; font-size:9px; margin:13px 0 0; }
+    .right-rail .surface { padding:17px; margin-bottom:15px; }
+    .likes-strip { display:flex; gap:12px; overflow:auto; padding:2px 0 5px; scrollbar-width:none; }
+    .likes-strip::-webkit-scrollbar { display:none; }
+    .like-person { flex:0 0 58px; text-align:center; border:0; background:transparent; color:#e9e7dd; padding:0; }
+    .like-person img { width:52px; height:52px; border-radius:50%; object-fit:cover; padding:2px; border:1px solid var(--red); }
+    .like-person span { display:block; font-size:9px; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .like-person small { color:var(--lime); font-size:8px; }
+    .match-list { display:grid; gap:11px; }
+    .match-row { display:flex; align-items:center; gap:10px; }
+    .match-row img { width:43px; height:50px; border-radius:11px; object-fit:cover; }
+    .match-row .match-copy { min-width:0; flex:1; }
+    .match-copy strong { display:block; font-size:11px; }
+    .match-copy small { display:block; color:var(--muted); font-size:9px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .match-score { color:var(--lime); font-size:9px; font-weight:800; }
+    .mini-action { border:0; background:rgba(255,255,255,.07); color:#eee; width:29px; height:29px; border-radius:50%; }
+    .mini-action:hover { background:var(--lime); color:var(--ink); }
+    .right-cta { width:100%; height:39px; border:1px solid rgba(208,251,149,.3); background:rgba(208,251,149,.08); color:var(--lime); border-radius:12px; font-size:10px; font-weight:800; margin-top:13px; }
+    .right-cta:hover { background:var(--lime); color:var(--ink); }
+    .online-list { display:flex; align-items:center; gap:0; padding:4px 0 0; }
+    .online-list img { width:31px; height:31px; border-radius:50%; object-fit:cover; border:2px solid #17150f; margin-left:-7px; }
+    .online-list img:first-child { margin-left:0; }
+    .online-list span { color:var(--muted); font-size:9px; margin-left:9px; }
+    .content-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+    .person-tile { position:relative; min-height:230px; border-radius:18px; overflow:hidden; border:1px solid var(--line); background:#242116; cursor:pointer; }
+    .person-tile img { width:100%; height:100%; position:absolute; inset:0; object-fit:cover; transition:transform .4s; }
+    .person-tile:hover img { transform:scale(1.05); }
+    .person-tile::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.78)); }
+    .person-tile-copy { position:absolute; z-index:1; left:13px; right:13px; bottom:13px; }
+    .person-tile-copy strong { font-size:14px; }
+    .person-tile-copy small { display:block; color:#ddd; font-size:9px; margin-top:4px; }
+    .tile-score { position:absolute; top:11px; right:11px; z-index:2; background:#fff; color:#111; border-radius:999px; padding:6px 9px; font-size:9px; font-weight:800; }
+    .messages-layout { display:grid; grid-template-columns: minmax(170px,.78fr) minmax(250px,1.22fr); min-height:610px; overflow:hidden; }
+    .conversation-list { border-right:1px solid var(--line); padding:14px; }
+    .conversation-list h3, .chat-pane h3 { margin:2px 0 14px; font-size:14px; }
+    .conversation-item { display:flex; gap:10px; padding:10px 8px; border-radius:13px; cursor:pointer; }
+    .conversation-item:hover, .conversation-item.active { background:rgba(255,255,255,.07); }
+    .conversation-item img { width:39px; height:39px; border-radius:50%; object-fit:cover; }
+    .conversation-item strong { display:block; font-size:10px; }
+    .conversation-item small { display:block; color:var(--muted); font-size:9px; margin-top:4px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chat-pane { padding:17px; display:flex; flex-direction:column; min-width:0; }
+    .chat-person { display:flex; align-items:center; gap:9px; padding-bottom:13px; border-bottom:1px solid var(--line); }
+    .chat-person img { width:37px; height:37px; border-radius:50%; object-fit:cover; }
+    .chat-person strong { font-size:11px; display:block; }
+    .chat-person small { color:var(--lime); font-size:9px; }
+    .chat-messages { flex:1; min-height:390px; max-height:450px; overflow:auto; padding:16px 2px; display:flex; flex-direction:column; gap:10px; }
+    .bubble { max-width:82%; border-radius:15px; padding:10px 12px; font-size:10px; line-height:1.5; }
+    .bubble.them { align-self:flex-start; background:#29271f; color:#eee; border-bottom-left-radius:4px; }
+    .bubble.me { align-self:flex-end; background:var(--red); color:white; border-bottom-right-radius:4px; }
+    .chat-compose { display:flex; gap:8px; }
+    .chat-compose input { flex:1; min-width:0; background:#1b1912; border:1px solid var(--line); border-radius:999px; padding:0 14px; color:white; font-size:10px; height:42px; }
+    .send-btn { width:42px; height:42px; border:0; border-radius:50%; background:var(--lime); color:var(--ink); }
+    .empty-state { text-align:center; padding:55px 20px; color:var(--muted); }
+    .empty-state i { font-size:30px; color:var(--lime); margin-bottom:14px; }
+    .empty-state h3 { color:white; font-size:16px; margin:0 0 7px; }
+    .empty-state p { font-size:11px; line-height:1.6; }
+    .modal-backdrop { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(0,0,0,.72); backdrop-filter:blur(12px); }
+    .modal-backdrop.open { display:flex; animation:fadeIn .18s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .modal { width:min(470px,100%); max-height:min(88vh,760px); overflow:auto; border:1px solid var(--line-strong); border-radius:24px; background:#17150f; box-shadow:0 30px 90px rgba(0,0,0,.55); padding:23px; transform:translateY(8px); animation:modalIn .22s ease forwards; }
+    @keyframes modalIn { to { transform:translateY(0); } }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .modal-head h2 { margin:0; font-size:17px; letter-spacing:-.04em; }
+    .close-btn { width:32px; height:32px; border:1px solid var(--line); background:rgba(255,255,255,.05); color:white; border-radius:50%; }
+    .modal-copy { color:var(--muted); font-size:11px; line-height:1.7; }
+    .config-status { display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:14px; padding:13px; margin:16px 0; }
+    .config-status i { font-size:16px; color:var(--lime); }
+    .config-status strong { display:block; font-size:11px; }
+    .config-status small { display:block; font-size:9px; color:var(--muted); margin-top:4px; }
+    .config-url { padding:12px; background:#0d0c08; border:1px solid var(--line); border-radius:12px; color:#ddd; font-size:10px; word-break:break-all; margin:12px 0; }
+    .steps { margin:15px 0 0; padding-left:17px; color:#bcbab0; font-size:10px; line-height:1.9; }
+    .steps code { color:var(--lime); background:rgba(208,251,149,.08); padding:2px 5px; border-radius:5px; }
+    .primary-btn { width:100%; height:44px; border:0; border-radius:12px; background:var(--lime); color:var(--ink); font-weight:800; font-size:11px; margin-top:13px; }
+    .primary-btn:hover { filter:brightness(1.06); transform:translateY(-1px); }
+    .secondary-btn { width:100%; height:42px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.04); color:white; font-weight:700; font-size:10px; margin-top:8px; }
+    .toast-region { position:fixed; z-index:150; left:50%; bottom:28px; transform:translateX(-50%); display:grid; gap:8px; width:min(360px,calc(100vw - 32px)); pointer-events:none; }
+    .toast { padding:12px 15px; border:1px solid var(--line-strong); border-radius:13px; background:#201e16; color:white; box-shadow:0 12px 32px rgba(0,0,0,.4); font-size:11px; animation:toastIn .22s ease; }
+    .toast i { color:var(--lime); margin-right:8px; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .mobile-nav { display:none; }
+    .hidden-view { display:none !important; }
+    .footer-note { color:#5f5d54; font-size:9px; text-align:center; margin:22px 0 0; }
+    @media (max-width:1180px) {
+      .app-shell { grid-template-columns:205px minmax(360px,1fr); }
+      .right-rail { display:none; }
+      .header-actions { min-width:unset; }
+    }
+    @media (max-width:760px) {
+      .app-header { height:62px; padding:0 15px; }
+      .brand { min-width:0; }
+      .brand-mark { width:30px; height:30px; }
+      .brand-name { font-size:20px; }
+      .header-nav, .city-select, .header-actions .avatar-btn { display:none; }
+      .header-actions { gap:7px; }
+      .location-indicator { max-width:38px; width:38px; height:36px; justify-content:center; padding:0; }
+      .location-indicator span { display:none; }
+      .redirect-pill { padding:8px 10px; font-size:9px; }
+      .header-icon { width:36px; height:36px; }
+      .app-shell { display:block; padding:18px 12px 95px; }
+      .left-rail, .right-rail { display:none; }
+      .view-head { margin:0 3px 14px; align-items:center; }
+      .view-head h1 { font-size:23px; }
+      .view-head p { font-size:10px; }
+      .view-tools .soft-btn { display:none; }
+      .discovery-tabs { margin-bottom:11px; }
+      .discovery-tab { padding:9px 16px; font-size:10px; }
+      .swipe-stage { width:100%; }
+      .profile-card { height: min(69svh, 690px); min-height:480px; border-radius:21px; }
+      .profile-info { left:18px; right:18px; bottom:20px; }
+      .profile-name-line h2 { font-size:27px; }
+      .profile-bio { font-size:10px; margin:10px 0; }
+      .action-row { margin-top:14px; gap:13px; }
+      .action-button { width:49px; height:49px; }
+      .action-button.like { width:61px; height:61px; }
+      .action-hint { margin-top:10px; }
+      .messages-layout { grid-template-columns:1fr; min-height:unset; }
+      .conversation-list { border-right:0; border-bottom:1px solid var(--line); }
+      .conversation-list .conversation-item { display:inline-flex; width:48%; vertical-align:top; }
+      .chat-messages { min-height:280px; }
+      .content-grid { gap:9px; }
+      .person-tile { min-height:220px; }
+      .mobile-nav {
+        display:flex; position:fixed; z-index:60; left:12px; right:12px; bottom:calc(10px + env(safe-area-inset-bottom));
+        height:62px; border:1px solid var(--line-strong); border-radius:20px; background:rgba(21,19,13,.94);
+        backdrop-filter:blur(20px); box-shadow:0 12px 40px rgba(0,0,0,.48); justify-content:space-around; align-items:center;
+      }
+      .mobile-nav button { width:25%; height:100%; border:0; background:transparent; color:#77756b; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:9px; }
+      .mobile-nav button i { font-size:17px; }
+      .mobile-nav button.active { color:var(--lime); }
+      .modal { padding:19px; }
+      .toast-region { bottom:88px; }
+    }
+    @media (max-width:380px) {
+      .redirect-pill span.label { display:none; }
+      .profile-card { min-height:450px; }
+      .profile-tags .profile-tag:nth-child(n+4) { display:none; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" aria-label="Mira home">
+      <div class="brand-mark"><i class="fa-solid fa-sparkles"></i></div>
+      <div class="brand-name">mira<span>.</span></div>
+    </div>
+
+    <nav class="header-nav" aria-label="Main navigation">
+      <button class="nav-btn active" data-view="discover">Discover</button>
+      <button class="nav-btn" data-view="likes">Likes & matches</button>
+      <button class="nav-btn" data-view="messages">Messages</button>
+    </nav>
+
+    <div class="header-actions">
+      <button class="location-indicator" id="locationIndicator" type="button"
+        title="Approximate city inferred from your IP address. No GPS or browser location permission is requested.">
+        <i class="fa-solid fa-location-dot"></i><span id="locationText">Detecting IP…</span>
+      </button>
+      <select class="city-select" id="headerCity" aria-label="Choose city">
+        <option value="Auto">Auto · IP</option>
+        <option value="Dhaka">Dhaka</option>
+        <option value="Chattogram">Chattogram</option>
+        <option value="Khulna">Khulna</option>
+        <option value="Sylhet">Sylhet</option>
+        <option value="Anywhere">Anywhere</option>
+      </select>
+      <button class="redirect-pill missing" id="redirectStatus" title="Global redirect settings">
+        <span class="redirect-dot"></span><span class="label" id="redirectStatusText">Link not set</span>
+      </button>
+      <button class="header-icon" id="openLinkSettings" aria-label="Global redirect settings"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+      <button class="avatar-btn" aria-label="Your profile"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces" alt="Your profile"></button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="left-rail">
+      <section class="surface rail-profile">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&h=160&fit=crop&crop=faces" alt="Your profile photo">
+        <div><strong>Alex Morgan</strong><small><span class="online-dot"></span>Active now · Your profile</small></div>
+      </section>
+
+      <nav class="surface rail-nav" aria-label="App sections">
+        <button class="rail-link active" data-view="discover"><i class="fa-solid fa-compass"></i> Discover</button>
+        <button class="rail-link" data-view="likes"><i class="fa-regular fa-heart"></i> Likes & matches <span class="count" id="likesCount">12</span></button>
+        <button class="rail-link" data-view="messages"><i class="fa-regular fa-message"></i> Messages <span class="count">3</span></button>
+        <button class="rail-link" id="savedNav"><i class="fa-regular fa-bookmark"></i> Saved profiles</button>
+      </nav>
+
+      <section class="surface filter-panel">
+        <div class="panel-heading"><h3>Preferences</h3><button class="subtle-link" id="resetFilters">Reset</button></div>
+        <label class="filter-label" for="distanceRange">Maximum distance <strong id="distanceValue">25 km</strong></label>
+        <input id="distanceRange" type="range" min="5" max="100" step="5" value="25">
+        <label class="filter-label" for="ageRange">Age range <strong id="ageValue">22–32</strong></label>
+        <input id="ageRange" type="range" min="20" max="45" step="1" value="32">
+        <label class="filter-label" for="intentSelect">Looking for</label>
+        <select class="filter-select" id="intentSelect">
+          <option value="Everyone">Everyone</option>
+          <option value="Relationship">A relationship</option>
+          <option value="Something casual">Something casual</option>
+          <option value="New friends">New friends</option>
+        </select>
+        <div class="filter-label" style="margin-top:17px">Interests</div>
+        <div class="interest-list" id="interestFilters">
+          <button class="interest-chip" data-interest="Travel">Travel</button>
+          <button class="interest-chip" data-interest="Music">Music</button>
+          <button class="interest-chip" data-interest="Coffee">Coffee</button>
+          <button class="interest-chip" data-interest="Art">Art</button>
+          <button class="interest-chip" data-interest="Fitness">Fitness</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="center-column">
+      <section id="discoverView">
+        <div class="view-head">
+          <div><div class="eyebrow">A good place to start</div><h1>Discover</h1><p id="discoverSubline">People worth getting to know in Dhaka</p></div>
+          <div class="view-tools"><button class="soft-btn" id="refreshProfiles"><i class="fa-solid fa-rotate-right"></i> Refresh</button></div>
+        </div>
+        <div class="discovery-tabs" role="tablist" aria-label="Discovery mode">
+          <button class="discovery-tab active" data-mode="For you">For you</button>
+          <button class="discovery-tab" data-mode="Nearby">Nearby</button>
+          <button class="discovery-tab" data-mode="New here">New here</button>
+        </div>
+
+        <div class="swipe-stage">
+          <article class="profile-card" id="profileCard" aria-label="Discover profile">
+            <div class="image-skeleton" id="imageSkeleton"></div>
+            <img class="profile-image" id="profileImage" alt="Profile portrait" draggable="false">
+            <div class="card-top" id="storyBars"></div>
+            <div class="card-top-actions">
+              <span class="status-tag"><i class="fa-solid fa-circle"></i><span id="profileStatus">ACTIVE TODAY</span></span>
+              <span class="score-tag"><i class="fa-solid fa-bolt"></i><span id="profileScore">94% MATCH</span></span>
+            </div>
+            <button class="photo-zone prev" id="photoPrev" aria-label="Previous photo"></button>
+            <button class="photo-zone next" id="photoNext" aria-label="Next photo"></button>
+            <div class="swipe-stamp like" id="likeStamp">LIKE</div>
+            <div class="swipe-stamp nope" id="nopeStamp">NOPE</div>
+            <div class="swipe-stamp super" id="superStamp">SUPER LIKE</div>
+            <div class="photo-counter" id="photoCounter">1 / 3</div>
+            <div class="profile-info">
+              <div class="profile-name-line"><h2 id="profileName">Sofia, 26</h2><span class="verified" title="Verified profile"><i class="fa-solid fa-check"></i></span></div>
+              <div class="profile-subline">
+                <span><i class="fa-solid fa-location-dot"></i><span id="profileLocation">Gulshan, Dhaka</span></span>
+                <span><i class="fa-solid fa-briefcase"></i><span id="profileJob">Architect</span></span>
+                <span id="profileDistanceWrap" hidden><i class="fa-solid fa-location-arrow"></i><span id="profileDistance"></span></span>
+              </div>
+              <p class="profile-bio" id="profileBio">Collecting little moments, finding new corners of the city and always saying yes to good coffee.</p>
+              <div class="profile-tags" id="profileTags"></div>
+            </div>
+          </article>
+          <div class="action-row" aria-label="Profile actions">
+            <button class="action-button pass" id="passBtn" title="Pass (←)" aria-label="Pass"><i class="fa-solid fa-xmark"></i></button>
+            <button class="action-button super" id="superBtn" title="Super like (↑)" aria-label="Super like"><i class="fa-solid fa-star"></i></button>
+            <button class="action-button like" id="likeBtn" title="Like (→)" aria-label="Like"><i class="fa-solid fa-heart"></i></button>
+            <button class="action-button message" id="profileMessageBtn" title="Message" aria-label="Message"><i class="fa-regular fa-comment-dots"></i></button>
+          </div>
+          <p class="action-hint">Swipe left to pass · right to like · up for a super like</p>
+        </div>
+      </section>
+
+      <section id="likesView" class="hidden-view">
+        <div class="view-head">
+          <div><div class="eyebrow">Your people</div><h1>Likes & matches</h1><p>Connections start with a little curiosity.</p></div>
+          <div class="view-tools"><button class="soft-btn" id="likesRefresh"><i class="fa-solid fa-rotate-right"></i> Refresh</button></div>
+        </div>
+        <div class="surface" style="padding:17px;margin-bottom:15px">
+          <div class="panel-heading"><h3>People who liked you</h3><span class="eyebrow">A few recent likes</span></div>
+          <div class="likes-strip" id="likesViewStrip"></div>
+        </div>
+        <div class="panel-heading" style="margin:20px 2px 12px"><h3>Your matches</h3><span class="eyebrow" id="matchTotal">0 connections</span></div>
+        <div class="content-grid" id="matchesGrid"></div>
+      </section>
+
+      <section id="messagesView" class="hidden-view">
+        <div class="view-head">
+          <div><div class="eyebrow">Keep it going</div><h1>Messages</h1><p>Your conversations, all in one place.</p></div>
+        </div>
+        <div class="surface messages-layout">
+          <div class="conversation-list"><h3>Conversations</h3><div id="conversationList"></div></div>
+          <div class="chat-pane" id="chatPane"></div>
+        </div>
+      </section>
+
+      <p class="footer-note">MIRA is a demo experience. Profiles and conversations shown here are sample content.</p>
+    </section>
+
+    <aside class="right-rail">
+      <section class="surface">
+        <div class="panel-heading"><h3>Likes you</h3><button class="subtle-link" data-view="likes">See all</button></div>
+        <div class="likes-strip" id="rightLikesStrip"></div>
+      </section>
+      <section class="surface">
+        <div class="panel-heading"><h3>Your matches</h3><button class="subtle-link" data-view="likes">View all</button></div>
+        <div class="match-list" id="rightMatchList"></div>
+        <button class="right-cta" id="rightConnectBtn">Explore connections <i class="fa-solid fa-arrow-right"></i></button>
+      </section>
+      <section class="surface">
+        <div class="panel-heading"><h3>Online now</h3><span class="eyebrow">Live preview</span></div>
+        <div class="online-list" id="onlineList"></div>
+      </section>
+      <section class="surface">
+        <div class="panel-heading"><h3>Quick link</h3><i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--lime)"></i></div>
+        <p class="modal-copy" style="margin:0">Use the shared destination configured in <strong style="color:white">link.txt</strong>.</p>
+        <button class="right-cta" id="rightGlobalBtn">Open destination <i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+      </section>
+    </aside>
+  </main>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="active" data-view="discover"><i class="fa-solid fa-compass"></i><span>Discover</span></button>
+    <button data-view="likes"><i class="fa-regular fa-heart"></i><span>Likes</span></button>
+    <button data-view="messages"><i class="fa-regular fa-message"></i><span>Messages</span></button>
+    <button id="mobileSettings"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Link</span></button>
+  </nav>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal" id="modalContent">
+      <div class="modal-head"><h2 id="modalTitle">Global destination</h2><button class="close-btn" id="closeModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    /* =========================================================
+       MIRA — app state and profile data
+       ========================================================= */
+    const REDIRECT_CONFIG_PATH = './link.txt';
+    let GLOBAL_REDIRECT_URL = '';
+    let redirectLastChecked = null;
+    let redirectCheckTimer = null;
+
+    const profiles = [
+      { id:'sofia', name:'Sofia', age:26, city:'Dhaka', area:'Gulshan', job:'Architect', score:94, status:'ACTIVE NOW', distance:4, intent:'Relationship', bio:'Collecting little moments, finding new corners of the city and always saying yes to good coffee.', interests:['Architecture','Coffee','Travel','Art'], photos:['https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1000&h=1400&fit=crop&crop=faces'], matched:true, online:true },
+      { id:'maya', name:'Maya', age:25, city:'Dhaka', area:'Dhanmondi', job:'Product designer', score:91, status:'ACTIVE TODAY', distance:6, intent:'Relationship', bio:'Designing useful things, chasing sunsets and keeping a running list of places to try.', interests:['Design','Music','Coffee','Books'], photos:['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=1000&h=1400&fit=crop&crop=faces'], matched:false, online:true },
+      { id:'adam', name:'Adam', age:28, city:'Chattogram', area:'Panchlaish', job:'Photographer', score:89, status:'ACTIVE NOW', distance:18, intent:'New friends', bio:'Usually behind the camera. Looking for someone who enjoys the long way home.', interests:['Photography','Travel','Hiking','Music'], photos:['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&h=1400&fit=crop&crop=faces'], matched:false, online:true },
+      { id:'nora', name:'Nora', age:27, city:'Dhaka', area:'Banani', job:'Brand strategist', score:96, status:'ACTIVE TODAY', distance:3, intent:'Relationship', bio:'Big on thoughtful conversations, little restaurants and spontaneous weekend plans.', interests:['Food','Art','Travel','Fitness'], photos:['https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1000&h=1400&fit=crop&crop=faces'], matched:true, online:false },
+      { id:'leo', name:'Leo', age:29, city:'Khulna', area:'Sonadanga', job:'Founder', score:87, status:'ACTIVE NOW', distance:22, intent:'Something casual', bio:'Building a small business and trying to spend more time outdoors. Tell me your best playlist.', interests:['Startups','Music','Fitness','Coffee'], photos:['https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&h=1400&fit=crop&crop=faces'], matched:false, online:true },
+      { id:'elle', name:'Elle', age:24, city:'Sylhet', area:'Zindabazar', job:'Doctor', score:92, status:'ACTIVE TODAY', distance:35, intent:'Relationship', bio:'Slow mornings, mountain air and conversations that accidentally last for hours.', interests:['Reading','Travel','Coffee','Nature'], photos:['https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=1000&h=1400&fit=crop&crop=faces'], matched:false, online:false },
+      { id:'rayan', name:'Rayan', age:30, city:'Dhaka', area:'Uttara', job:'Music producer', score:90, status:'ACTIVE NOW', distance:12, intent:'New friends', bio:'Making sounds, collecting records and looking for new people to make memories with.', interests:['Music','Art','Travel','Food'], photos:['https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=1000&h=1400&fit=crop&crop=faces'], matched:false, online:true },
+      { id:'jules', name:'Jules', age:27, city:'Dhaka', area:'Mohakhali', job:'UX researcher', score:95, status:'ACTIVE TODAY', distance:8, intent:'Relationship', bio:'Curious by default. Currently learning pottery and trying to get better at doing nothing.', interests:['Art','Books','Coffee','Design'], photos:['https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1000&h=1400&fit=crop&crop=faces','https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1000&h=1400&fit=crop&crop=faces'], matched:false, online:true }
+    ];
+
+    // City-centre coordinates are intentionally coarse because these are demo profiles.
+    // They are used only to calculate approximate distances from the visitor's IP location.
+    const CITY_COORDINATES = {
+      Dhaka: { lat:23.8103, lon:90.4125 },
+      Chattogram: { lat:22.3569, lon:91.7832 },
+      Khulna: { lat:22.8456, lon:89.5403 },
+      Sylhet: { lat:24.8949, lon:91.8687 }
+    };
+
+    const seededChats = [
+      { id:'nora', profileId:'nora', messages:[{from:'them',text:'Hey! I saw you like little coffee spots too. Any favourites in the city?'},{from:'me',text:'There is a tiny place in Banani I keep going back to.'}] },
+      { id:'sofia', profileId:'sofia', messages:[{from:'them',text:'Your travel photos look lovely. Where was the last one taken?'},{from:'me',text:'That was Cox’s Bazar, early morning. Worth waking up for.'}] },
+      { id:'maya', profileId:'maya', messages:[{from:'them',text:'Hi Alex 👋 How is your week going?' }] }
+    ];
+
+    const state = {
+      view:'discover', mode:'For you', city:'Auto', locationMode:'auto',
+      detectedLocation:null, locationError:null, index:0, photoIndex:0,
+      maxDistance:25, maxAge:32, minAge:22, intent:'Everyone', interests:new Set(),
+      liked:new Set(JSON.parse(localStorage.getItem('mira-liked') || '[]')),
+      passed:new Set(JSON.parse(localStorage.getItem('mira-passed') || '[]')),
+      saved:new Set(JSON.parse(localStorage.getItem('mira-saved') || '[]')),
+      matches:new Set(JSON.parse(localStorage.getItem('mira-matches') || '["nora","sofia"]')),
+      chats:JSON.parse(localStorage.getItem('mira-chats') || 'null') || seededChats,
+      activeChat:'nora'
+    };
+
+    let visibleProfiles = [];
+    let swipeStart = null;
+    let isAnimating = false;
+
+    const $ = (id) => document.getElementById(id);
+    const profileById = (id) => profiles.find(p => p.id === id);
+    const currentProfile = () => visibleProfiles[state.index] || null;
+
+    /* =========================================================
+       Global redirect — one source of truth for every outbound CTA
+       ========================================================= */
+    function parseRedirectText(text) {
+      const line = text.split(/\r?\n/)
+        .map(value => value.trim())
+        .find(value => value && !value.startsWith('#'));
+      if (!line) return '';
+      try {
+        const parsed = new URL(line);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+        return parsed.toString();
+      } catch {
+        return '';
+      }
+    }
+
+    async function loadGlobalRedirect({silent=true} = {}) {
+      try {
+        const configUrl = new URL(REDIRECT_CONFIG_PATH, window.location.href);
+        configUrl.searchParams.set('_refresh', Date.now().toString());
+        const response = await fetch(configUrl.toString(), {
+          method:'GET',
+          cache:'no-store',
+          headers:{'Cache-Control':'no-cache'}
+        });
+        if (!response.ok) throw new Error('link.txt could not be loaded');
+        const text = await response.text();
+        GLOBAL_REDIRECT_URL = parseRedirectText(text);
+        redirectLastChecked = new Date();
+        renderRedirectStatus();
+        if (!silent) showToast(GLOBAL_REDIRECT_URL ? 'Global destination updated.' : 'link.txt has no destination URL yet.');
+      } catch (error) {
+        GLOBAL_REDIRECT_URL = '';
+        renderRedirectStatus();
+        if (!silent) showToast('Could not read link.txt. Check that it is deployed beside index.html.');
+      }
+    }
+
+    function renderRedirectStatus() {
+      const pill = $('redirectStatus');
+      const label = $('redirectStatusText');
+      if (!pill || !label) return;
+      pill.classList.toggle('ready', Boolean(GLOBAL_REDIRECT_URL));
+      pill.classList.toggle('missing', !GLOBAL_REDIRECT_URL);
+      label.textContent = GLOBAL_REDIRECT_URL ? 'Link connected' : 'Link not set';
+      pill.title = GLOBAL_REDIRECT_URL
+        ? `Global destination: ${new URL(GLOBAL_REDIRECT_URL).host}. Click to manage.`
+        : 'Global destination is not configured. Click to manage.';
+    }
+
+    function redirectToGlobal(action='open', profile=null) {
+      if (!GLOBAL_REDIRECT_URL) {
+        openLinkSettings();
+        showToast('Set your global destination in GitHub’s link.txt first.');
+        return false;
+      }
+      try {
+        const destination = new URL(GLOBAL_REDIRECT_URL);
+        destination.searchParams.set('source', 'mira');
+        destination.searchParams.set('action', action);
+        if (profile) {
+          destination.searchParams.set('profile_id', profile.id);
+          destination.searchParams.set('profile_name', profile.name);
+          destination.searchParams.set('profile_city', profile.city);
+        }
+        // Same-tab navigation is intentional: this is a real global redirect.
+        window.location.assign(destination.toString());
+        return true;
+      } catch {
+        showToast('The destination URL is invalid. Check link.txt.');
+        return false;
+      }
+    }
+
+    function openLinkSettings() {
+      $('modalTitle').textContent = 'Global redirect';
+      const host = GLOBAL_REDIRECT_URL ? new URL(GLOBAL_REDIRECT_URL).host : 'No destination configured';
+      $('modalBody').innerHTML = `
+        <p class="modal-copy">Every external action in MIRA uses one shared destination. Change it once in GitHub and the whole website will use the new URL after Vercel deploys the commit.</p>
+        <div class="config-status">
+          <i class="fa-solid ${GLOBAL_REDIRECT_URL ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+          <div><strong>${GLOBAL_REDIRECT_URL ? 'Destination connected' : 'Destination not configured'}</strong><small>${host}</small></div>
+        </div>
+        <div class="config-url">${GLOBAL_REDIRECT_URL || 'link.txt is empty. Add one full https:// URL.'}</div>
+        <p class="modal-copy" style="margin-bottom:5px">To change the destination for every visitor:</p>
+        <ol class="steps">
+          <li>Open your GitHub repository.</li>
+          <li>Edit <code>link.txt</code> in the repository root.</li>
+          <li>Replace its contents with one full URL, for example <code>https://example.com/offer</code>.</li>
+          <li>Commit to your production branch. Vercel will deploy automatically.</li>
+        </ol>
+        <button class="primary-btn" id="modalOpenDestination" ${GLOBAL_REDIRECT_URL ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'}>Open global destination <i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+        <button class="secondary-btn" id="modalRefreshLink">Check link.txt again</button>
+        <p class="modal-copy" style="font-size:9px;margin:12px 0 0">Auto-checks on page load and every 60 seconds. Last check: ${redirectLastChecked ? redirectLastChecked.toLocaleTimeString() : 'not checked yet'}.</p>
+      `;
+      $('modalBackdrop').classList.add('open');
+      $('modalOpenDestination')?.addEventListener('click', () => redirectToGlobal('open'));
+      $('modalRefreshLink')?.addEventListener('click', async () => {
+        await loadGlobalRedirect({silent:false});
+        openLinkSettings();
+      });
+    }
+
+    /* =========================================================
+       Approximate IP location — deliberately does NOT use GPS.
+       No browser permission prompt is shown. The IP geolocation
+       provider receives the visitor's public IP address.
+       ========================================================= */
+    function setLocationIndicator(text, status='ready') {
+      const button = $('locationIndicator');
+      button.classList.toggle('locating', status === 'loading');
+      button.classList.toggle('failed', status === 'failed');
+      $('locationText').textContent = text;
+      button.title = status === 'failed'
+        ? 'IP location could not be determined. Choose a city manually.'
+        : status === 'manual'
+          ? 'You selected this city manually. No IP location is being used.'
+          : 'Approximate location inferred from your IP address. No GPS permission is requested. Click for details.';
+    }
+
+    async function fetchJsonWithTimeout(url, timeoutMs=6500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          method:'GET', cache:'no-store', mode:'cors', signal:controller.signal,
+          headers:{'Accept':'application/json'}
+        });
+        if (!response.ok) throw new Error(`Location provider returned ${response.status}`);
+        return await response.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function normalizeIpLocation(data, provider) {
+      const lat = Number(data.latitude ?? data.lat);
+      const lon = Number(data.longitude ?? data.lon);
+      const city = String(data.city || '').trim();
+      const region = String(data.region || data.region_name || '').trim();
+      const country = String(data.country_name || data.country || '').trim();
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || !city) {
+        throw new Error('IP provider returned incomplete location data');
+      }
+      return { city, region, country, lat, lon, provider };
+    }
+
+    async function detectLocationByIP() {
+      if (state.locationMode !== 'auto') return;
+      setLocationIndicator('Detecting IP…', 'loading');
+      const providers = [
+        async () => {
+          const data = await fetchJsonWithTimeout('https://ipwho.is/');
+          if (data.success === false) throw new Error(data.message || 'IP lookup failed');
+          return normalizeIpLocation(data, 'ipwho.is');
+        },
+        async () => {
+          const data = await fetchJsonWithTimeout('https://ipapi.co/json/');
+          if (data.error) throw new Error(data.reason || 'IP lookup failed');
+          return normalizeIpLocation(data, 'ipapi.co');
+        }
+      ];
+
+      let location = null;
+      let lastError = null;
+      for (const provider of providers) {
+        try { location = await provider(); break; }
+        catch (error) { lastError = error; }
+      }
+
+      // A visitor may manually choose a city while the IP request is in flight.
+      if (state.locationMode !== 'auto') return;
+
+      if (!location) {
+        state.detectedLocation = null;
+        state.locationError = lastError?.message || 'IP lookup unavailable';
+        setLocationIndicator('Location unavailable', 'failed');
+        refreshVisibleProfiles();
+        return;
+      }
+
+      state.detectedLocation = location;
+      state.locationError = null;
+      state.city = 'Auto';
+      syncFilterControls();
+      refreshVisibleProfiles();
+
+      const place = [location.city, location.region, location.country].filter(Boolean).join(', ');
+      setLocationIndicator(`${location.city} · IP`, 'ready');
+      $('discoverSubline').textContent = `Approx. IP location: ${place} · distances are estimates`;
+    }
+
+    function haversineDistanceKm(from, to) {
+      const radians = degrees => degrees * Math.PI / 180;
+      const dLat = radians(to.lat - from.lat);
+      const dLon = radians(to.lon - from.lon);
+      const lat1 = radians(from.lat);
+      const lat2 = radians(to.lat);
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+      return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function getProfileDistanceKm(profile) {
+      if (state.city === 'Auto' && state.detectedLocation) {
+        const coords = CITY_COORDINATES[profile.city];
+        if (coords) return haversineDistanceKm(state.detectedLocation, coords);
+      }
+      return profile.distance;
+    }
+
+    function openLocationInfo() {
+      const location = state.detectedLocation;
+      $('modalTitle').textContent = 'Approximate location';
+      $('modalBody').innerHTML = `
+        <div class="config-status">
+          <i class="fa-solid fa-location-dot"></i>
+          <div>
+            <strong>${location ? escapeHTML([location.city, location.region, location.country].filter(Boolean).join(', ')) : 'Location not available'}</strong>
+            <small>${location ? 'Estimated from your public IP address' : 'Choose a city manually or retry the IP lookup'}</small>
+          </div>
+        </div>
+        <p class="modal-copy">MIRA does not request GPS access or show a browser location-permission prompt. It estimates your general area from your public IP address using an IP geolocation service.</p>
+        <p class="modal-copy">IP location is approximate and can be inaccurate, especially on mobile networks, VPNs or corporate connections. Demo profile distances use city-centre coordinates, so they are estimates rather than exact distances.</p>
+        <p class="modal-copy">The geolocation provider receives your public IP address to return the approximate city and coordinates. You can avoid this lookup by selecting a city manually.</p>
+        <button class="primary-btn" id="retryIpLocation">Try IP lookup again</button>
+        <button class="secondary-btn" id="chooseManualCity">Choose city manually</button>
+      `;
+      $('modalBackdrop').classList.add('open');
+      $('retryIpLocation').addEventListener('click', async () => {
+        closeModal();
+        state.locationMode='auto';
+        state.city='Auto';
+        state.detectedLocation=null;
+        state.locationError=null;
+        syncFilterControls();
+        await detectLocationByIP();
+      });
+      $('chooseManualCity').addEventListener('click', () => {
+        closeModal();
+        $('headerCity').focus();
+        showToast('Choose a city from the location menu.');
+      });
+    }
+
+    /* =========================================================
+       Discovery filters and profile rendering
+       ========================================================= */
+    function getFilteredProfiles() {
+      return profiles.filter(p => {
+        if (state.city !== 'Anywhere' && state.city !== 'Auto' && p.city !== state.city) return false;
+        if (state.city === 'Auto' && state.detectedLocation) {
+          if (getProfileDistanceKm(p) > state.maxDistance) return false;
+        } else if (state.city !== 'Auto' && getProfileDistanceKm(p) > state.maxDistance) {
+          return false;
+        }
+        if (p.age < state.minAge || p.age > state.maxAge) return false;
+        if (state.intent !== 'Everyone' && p.intent !== state.intent) return false;
+        if (state.interests.size && ![...state.interests].some(tag => p.interests.includes(tag))) return false;
+        if (state.passed.has(p.id) || state.liked.has(p.id)) return false;
+        return true;
+      });
+    }
+
+    function refreshVisibleProfiles() {
+      visibleProfiles = getFilteredProfiles();
+      state.index = Math.min(state.index, Math.max(0, visibleProfiles.length - 1));
+      state.photoIndex = 0;
+      renderProfile();
+    }
+
+    function renderProfile() {
+      const profile = currentProfile();
+      if (!profile) {
+        $('noProfilesState')?.remove();
+        $('profileCard').classList.add('hidden-view');
+        $('profileCard').insertAdjacentHTML('afterend', `
+          <div class="surface empty-state" id="noProfilesState">
+            <i class="fa-regular fa-face-smile"></i><h3>That’s everyone for now</h3>
+            <p>Try widening your distance, changing your filters or choosing Anywhere.</p>
+            <button class="primary-btn" id="widenFilters">Widen my filters</button>
+          </div>`);
+        $('widenFilters')?.addEventListener('click', () => {
+          state.city='Anywhere'; state.maxDistance=100; state.maxAge=45; state.minAge=20; state.intent='Everyone'; state.interests.clear();
+          syncFilterControls(); refreshVisibleProfiles();
+        });
+        $('photoCounter').textContent = '—';
+        return;
+      }
+      $('noProfilesState')?.remove();
+      $('profileCard').classList.remove('hidden-view','swiping-left','swiping-right','swiping-up');
+      $('profileName').textContent = `${profile.name}, ${profile.age}`;
+      $('profileLocation').textContent = `${profile.area}, ${profile.city}`;
+      $('profileJob').textContent = profile.job;
+      const distanceWrap = $('profileDistanceWrap');
+      if (state.city === 'Auto' && state.detectedLocation) {
+        distanceWrap.hidden = false;
+        $('profileDistance').textContent = `~${Math.round(getProfileDistanceKm(profile))} km away`;
+      } else {
+        distanceWrap.hidden = true;
+      }
+      $('profileBio').textContent = profile.bio;
+      $('profileScore').textContent = `${profile.score}% MATCH`;
+      $('profileStatus').textContent = profile.status;
+      $('profileTags').innerHTML = profile.interests.slice(0,4).map(tag => `<span class="profile-tag">${escapeHTML(tag)}</span>`).join('');
+      $('storyBars').innerHTML = profile.photos.map((_,i) => `<span class="story-segment ${i===state.photoIndex?'active':''}"></span>`).join('');
+      $('photoCounter').textContent = `${state.photoIndex+1} / ${profile.photos.length}`;
+      $('imageSkeleton').style.display = 'block';
+      $('profileImage').classList.remove('loaded');
+      $('profileImage').onload = () => { $('profileImage').classList.add('loaded'); $('imageSkeleton').style.display='none'; };
+      $('profileImage').onerror = () => {
+        $('profileImage').classList.remove('loaded');
+        $('imageSkeleton').style.display='none';
+        $('profileCard').style.background = 'radial-gradient(circle at 50% 25%, #77745c, #28271e 65%, #0c0b08)';
+      };
+      $('profileImage').src = profile.photos[state.photoIndex];
+      $('profileCard').style.background = '#25251f';
+      if (state.city === 'Auto' && state.detectedLocation) {
+        const place = [state.detectedLocation.city, state.detectedLocation.region, state.detectedLocation.country].filter(Boolean).join(', ');
+        $('discoverSubline').textContent = `Approx. IP location: ${place} · distances are estimates`;
+      } else if (state.city === 'Auto' && state.locationError) {
+        $('discoverSubline').textContent = 'Location unavailable · choose a city manually';
+      } else if (state.city === 'Auto') {
+        $('discoverSubline').textContent = 'Detecting approximate location from IP…';
+      } else {
+        $('discoverSubline').textContent = `People worth getting to know in ${state.city === 'Anywhere' ? 'your area' : state.city}`;
+      }
+      $('likesCount').textContent = state.liked.size + 12;
+    }
+
+    function changePhoto(direction) {
+      const profile = currentProfile();
+      if (!profile) return;
+      state.photoIndex = (state.photoIndex + direction + profile.photos.length) % profile.photos.length;
+      renderProfile();
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+
+    function persistState() {
+      localStorage.setItem('mira-liked', JSON.stringify([...state.liked]));
+      localStorage.setItem('mira-passed', JSON.stringify([...state.passed]));
+      localStorage.setItem('mira-saved', JSON.stringify([...state.saved]));
+      localStorage.setItem('mira-matches', JSON.stringify([...state.matches]));
+      localStorage.setItem('mira-chats', JSON.stringify(state.chats));
+    }
+
+    function nextProfile() {
+      if (!currentProfile()) return;
+      state.index++;
+      state.photoIndex=0;
+      if (state.index >= visibleProfiles.length) {
+        visibleProfiles = getFilteredProfiles();
+        state.index = 0;
+      }
+      renderProfile();
+    }
+
+    function previousProfile() {
+      state.index = Math.max(0, state.index - 1);
+      state.photoIndex=0;
+      renderProfile();
+    }
+
+    function swipe(direction) {
+      const profile = currentProfile();
+      if (!profile || isAnimating) return;
+      isAnimating = true;
+      const card = $('profileCard');
+      card.classList.remove('swiping-left','swiping-right','swiping-up');
+      const stamp = direction === 'left' ? $('nopeStamp') : direction === 'right' ? $('likeStamp') : $('superStamp');
+      stamp.style.opacity = '1';
+      stamp.style.transform = direction === 'left' ? 'rotate(14deg) scale(1)' : direction === 'right' ? 'rotate(-14deg) scale(1)' : 'translateX(-50%) rotate(-8deg) scale(1)';
+      card.classList.add(direction === 'left' ? 'swiping-left' : direction === 'right' ? 'swiping-right' : 'swiping-up');
+
+      if (direction === 'left') state.passed.add(profile.id);
+      if (direction === 'right' || direction === 'up') {
+        state.liked.add(profile.id);
+        if (profile.matched || (direction === 'up' && profile.score > 90)) {
+          state.matches.add(profile.id);
+          showMatchModal(profile);
+        } else {
+          showToast(direction === 'up' ? `Super like sent to ${profile.name}.` : `You liked ${profile.name}.`);
+        }
+      }
+      persistState();
+      setTimeout(() => {
+        stamp.style.opacity='0';
+        stamp.style.transform = direction === 'left' ? 'rotate(14deg) scale(.8)' : direction === 'right' ? 'rotate(-14deg) scale(.8)' : 'translateX(-50%) rotate(-8deg) scale(.8)';
+        card.classList.remove('swiping-left','swiping-right','swiping-up');
+        isAnimating=false;
+        refreshVisibleProfiles();
+        renderSidebars();
+      }, 350);
+    }
+
+    function showMatchModal(profile) {
+      $('modalTitle').textContent = 'It’s a match';
+      $('modalBody').innerHTML = `
+        <div style="text-align:center;padding:12px 0 5px">
+          <div style="display:flex;justify-content:center;align-items:center;margin-bottom:18px">
+            <img src="${profile.photos[0]}" alt="" style="width:88px;height:88px;object-fit:cover;border-radius:50%;border:3px solid var(--red);margin-right:-12px">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&h=160&fit=crop&crop=faces" alt="" style="width:88px;height:88px;object-fit:cover;border-radius:50%;border:3px solid var(--lime);margin-left:-12px">
+          </div>
+          <div class="eyebrow">You both liked each other</div>
+          <h2 style="font-size:28px;letter-spacing:-.06em;margin:8px 0">You and ${escapeHTML(profile.name)}</h2>
+          <p class="modal-copy">Good things can start with a hello.</p>
+        </div>
+        <button class="primary-btn" id="matchSayHello">Say hello <i class="fa-solid fa-arrow-right"></i></button>
+        <button class="secondary-btn" id="matchKeepSwiping">Keep discovering</button>
+      `;
+      $('modalBackdrop').classList.add('open');
+      $('matchSayHello').addEventListener('click', () => {
+        closeModal();
+        redirectToGlobal('chat', profile);
+      });
+      $('matchKeepSwiping').addEventListener('click', closeModal);
+    }
+
+    function openProfileDetail(profile) {
+      $('modalTitle').textContent = `${profile.name}, ${profile.age}`;
+      $('modalBody').innerHTML = `
+        <img src="${profile.photos[0]}" alt="${escapeHTML(profile.name)}" style="width:100%;height:260px;object-fit:cover;border-radius:15px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+          <span class="eyebrow">${escapeHTML(profile.area)}, ${escapeHTML(profile.city)}</span>
+          <span class="score-tag">${profile.score}% MATCH</span>
+        </div>
+        <p class="modal-copy" style="margin-top:10px">${escapeHTML(profile.bio)}</p>
+        <div class="profile-tags" style="margin:12px 0">${profile.interests.map(i=>`<span class="profile-tag">${escapeHTML(i)}</span>`).join('')}</div>
+        <button class="primary-btn" id="detailConnect">Connect with ${escapeHTML(profile.name)}</button>
+        <button class="secondary-btn" id="detailSave">${state.saved.has(profile.id) ? 'Remove from saved' : 'Save profile'}</button>
+      `;
+      $('modalBackdrop').classList.add('open');
+      $('detailConnect').addEventListener('click', () => redirectToGlobal('connect', profile));
+      $('detailSave').addEventListener('click', () => {
+        if (state.saved.has(profile.id)) state.saved.delete(profile.id); else state.saved.add(profile.id);
+        persistState(); closeModal(); showToast(state.saved.has(profile.id) ? 'Profile saved.' : 'Removed from saved.'); renderSidebars();
+      });
+    }
+
+    /* =========================================================
+       Likes, matches, chat and sidebars
+       ========================================================= */
+    function renderSidebars() {
+      const likeProfiles = [profiles[2],profiles[4],profiles[5],profiles[6]];
+      const renderLike = p => `<button class="like-person" data-profile="${p.id}"><img src="${p.photos[0]}" alt="${escapeHTML(p.name)}"><span>${escapeHTML(p.name)} <small>●</small></span></button>`;
+      $('rightLikesStrip').innerHTML = likeProfiles.map(renderLike).join('');
+      $('likesViewStrip').innerHTML = likeProfiles.map(renderLike).join('');
+      const matched = [...state.matches].map(profileById).filter(Boolean);
+      $('rightMatchList').innerHTML = matched.slice(0,4).map(p => `
+        <div class="match-row"><img src="${p.photos[0]}" alt="${escapeHTML(p.name)}"><div class="match-copy"><strong>${escapeHTML(p.name)}, ${p.age}</strong><small>${escapeHTML(p.city)} · ${p.job}</small></div><span class="match-score">${p.score}%</span><button class="mini-action" data-chat="${p.id}" aria-label="Message ${escapeHTML(p.name)}"><i class="fa-regular fa-comment"></i></button></div>`).join('') || '<p class="modal-copy">Your matches will appear here.</p>';
+      $('matchesGrid').innerHTML = matched.map(p => `
+        <article class="person-tile" data-profile="${p.id}">
+          <img src="${p.photos[0]}" alt="${escapeHTML(p.name)}">
+          <span class="tile-score">${p.score}% match</span>
+          <div class="person-tile-copy"><strong>${escapeHTML(p.name)}, ${p.age}</strong><small>${escapeHTML(p.area)}, ${escapeHTML(p.city)}</small></div>
+        </article>`).join('') || `<div class="empty-state" style="grid-column:1/-1"><i class="fa-regular fa-heart"></i><h3>No matches yet</h3><p>Keep discovering and your connections will show up here.</p></div>`;
+      $('matchTotal').textContent = `${matched.length} connections`;
+      const online = profiles.filter(p=>p.online).slice(0,5);
+      $('onlineList').innerHTML = online.map(p=>`<img src="${p.photos[0]}" alt="${escapeHTML(p.name)}" title="${escapeHTML(p.name)}">`).join('') + `<span>${online.length} people active</span>`;
+      $('likesCount').textContent = state.liked.size + 12;
+    }
+
+    function renderLikesView() {
+      renderSidebars();
+    }
+
+    function renderMessagesView() {
+      const list = $('conversationList');
+      list.innerHTML = state.chats.map(chat => {
+        const p = profileById(chat.profileId);
+        if (!p) return '';
+        const last = chat.messages[chat.messages.length-1]?.text || 'Start a conversation';
+        return `<div class="conversation-item ${state.activeChat===chat.id?'active':''}" data-chat-select="${chat.id}">
+          <img src="${p.photos[0]}" alt="${escapeHTML(p.name)}">
+          <div><strong>${escapeHTML(p.name)}</strong><small>${escapeHTML(last)}</small></div>
+        </div>`;
+      }).join('') || '<p class="modal-copy">No conversations yet.</p>';
+      const chat = state.chats.find(c=>c.id===state.activeChat) || state.chats[0];
+      const p = chat ? profileById(chat.profileId) : null;
+      if (!chat || !p) {
+        $('chatPane').innerHTML = '<div class="empty-state"><i class="fa-regular fa-message"></i><h3>Your conversations start here</h3><p>Match with someone to start a chat.</p></div>';
+        return;
+      }
+      $('chatPane').innerHTML = `
+        <div class="chat-person"><img src="${p.photos[0]}" alt="${escapeHTML(p.name)}"><div><strong>${escapeHTML(p.name)}</strong><small><span class="online-dot"></span>${p.online?'Active now':'Recently active'}</small></div><button class="mini-action" style="margin-left:auto" id="chatExternal" title="Continue externally"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div>
+        <div class="chat-messages" id="chatMessages">${chat.messages.map(m=>`<div class="bubble ${m.from==='me'?'me':'them'}">${escapeHTML(m.text)}</div>`).join('')}</div>
+        <form class="chat-compose" id="chatForm"><input id="chatInput" autocomplete="off" placeholder="Write a message..." aria-label="Write a message"><button class="send-btn" type="submit" aria-label="Send message"><i class="fa-solid fa-arrow-up"></i></button></form>
+        <p class="modal-copy" style="font-size:9px;margin:10px 0 0">Demo chat is stored in this browser. Use the arrow icon to continue through your global destination.</p>
+      `;
+      $('chatExternal').addEventListener('click', () => redirectToGlobal('chat', p));
+      $('chatForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const input = $('chatInput');
+        const value = input.value.trim();
+        if (!value) return;
+        chat.messages.push({from:'me',text:value});
+        persistState();
+        renderMessagesView();
+        $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+      });
+      $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+    }
+
+    function setView(view) {
+      state.view = view;
+      ['discover','likes','messages'].forEach(name => $(name+'View').classList.toggle('hidden-view', name !== view));
+      document.querySelectorAll('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+      if (view === 'likes') renderLikesView();
+      if (view === 'messages') renderMessagesView();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function syncFilterControls() {
+      $('headerCity').value = state.city;
+      $('distanceRange').value = state.maxDistance;
+      $('distanceValue').textContent = `${state.maxDistance} km`;
+      $('ageRange').value = state.maxAge;
+      $('ageValue').textContent = `${state.minAge}–${state.maxAge}`;
+      $('intentSelect').value = state.intent;
+      document.querySelectorAll('.interest-chip').forEach(btn => btn.classList.toggle('selected',state.interests.has(btn.dataset.interest)));
+    }
+
+    /* =========================================================
+       Shared UI helpers
+       ========================================================= */
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check"></i>${escapeHTML(message)}`;
+      $('toastRegion').appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+    function closeModal() { $('modalBackdrop').classList.remove('open'); }
+    function openGenericModal(title, body) {
+      $('modalTitle').textContent = title;
+      $('modalBody').innerHTML = body;
+      $('modalBackdrop').classList.add('open');
+    }
+
+    /* =========================================================
+       Event wiring
+       ========================================================= */
+    function bindEvents() {
+      document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
+      $('openLinkSettings').addEventListener('click', openLinkSettings);
+      $('redirectStatus').addEventListener('click', openLinkSettings);
+      $('locationIndicator').addEventListener('click', openLocationInfo);
+      $('rightGlobalBtn').addEventListener('click', () => redirectToGlobal('open'));
+      $('mobileSettings').addEventListener('click', openLinkSettings);
+      $('rightConnectBtn').addEventListener('click', () => redirectToGlobal('connections'));
+      $('closeModal').addEventListener('click', closeModal);
+      $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+        if ($('modalBackdrop').classList.contains('open')) return;
+        if (e.target.matches('input,select,textarea')) return;
+        if (state.view !== 'discover') return;
+        if (e.key === 'ArrowLeft') swipe('left');
+        if (e.key === 'ArrowRight') swipe('right');
+        if (e.key === 'ArrowUp') { e.preventDefault(); swipe('up'); }
+      });
+
+      $('passBtn').addEventListener('click', () => swipe('left'));
+      $('likeBtn').addEventListener('click', () => swipe('right'));
+      $('superBtn').addEventListener('click', () => swipe('up'));
+      $('photoPrev').addEventListener('click', () => changePhoto(-1));
+      $('photoNext').addEventListener('click', () => changePhoto(1));
+      $('profileMessageBtn').addEventListener('click', () => {
+        const p = currentProfile();
+        if (p) redirectToGlobal('chat', p);
+      });
+
+      $('profileCard').addEventListener('pointerdown', e => {
+        if (e.target.closest('button')) return;
+        swipeStart = {x:e.clientX,y:e.clientY};
+      });
+      $('profileCard').addEventListener('pointerup', e => {
+        if (!swipeStart) return;
+        const dx=e.clientX-swipeStart.x, dy=e.clientY-swipeStart.y;
+        swipeStart=null;
+        if (Math.abs(dx)>65 && Math.abs(dx)>Math.abs(dy)) swipe(dx>0?'right':'left');
+        else if (dy < -75) swipe('up');
+        else if (Math.abs(dx)<15 && Math.abs(dy)<15 && e.clientX < window.innerWidth/2) changePhoto(-1);
+      });
+
+      $('headerCity').addEventListener('change', e => {
+        state.index=0;
+        if (e.target.value === 'Auto') {
+          state.locationMode='auto';
+          state.city='Auto';
+          state.detectedLocation=null;
+          state.locationError=null;
+          setLocationIndicator('Detecting IP…', 'loading');
+          refreshVisibleProfiles();
+          detectLocationByIP();
+        } else {
+          state.locationMode='manual';
+          state.detectedLocation=null;
+          state.city=e.target.value;
+          setLocationIndicator(`${state.city} · manual`, 'manual');
+          refreshVisibleProfiles();
+        }
+      });
+      $('distanceRange').addEventListener('input', e => { state.maxDistance=Number(e.target.value); $('distanceValue').textContent=`${state.maxDistance} km`; });
+      $('distanceRange').addEventListener('change', refreshVisibleProfiles);
+      $('ageRange').addEventListener('input', e => { state.maxAge=Number(e.target.value); $('ageValue').textContent=`${state.minAge}–${state.maxAge}`; });
+      $('ageRange').addEventListener('change', refreshVisibleProfiles);
+      $('intentSelect').addEventListener('change', e => { state.intent=e.target.value; refreshVisibleProfiles(); });
+      $('interestFilters').addEventListener('click', e => {
+        const btn=e.target.closest('[data-interest]'); if (!btn) return;
+        const tag=btn.dataset.interest;
+        if (state.interests.has(tag)) state.interests.delete(tag); else state.interests.add(tag);
+        btn.classList.toggle('selected',state.interests.has(tag));
+        refreshVisibleProfiles();
+      });
+      $('resetFilters').addEventListener('click', () => {
+        state.city='Auto'; state.locationMode='auto'; state.detectedLocation=null; state.locationError=null;
+        state.maxDistance=100; state.maxAge=45; state.minAge=20; state.intent='Everyone'; state.interests.clear();
+        syncFilterControls(); refreshVisibleProfiles(); detectLocationByIP(); showToast('Filters reset.');
+      });
+      $('refreshProfiles').addEventListener('click', () => { state.index=0; refreshVisibleProfiles(); showToast('Discovery refreshed.'); });
+      $('likesRefresh').addEventListener('click', renderSidebars);
+      document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => {
+        state.mode=btn.dataset.mode;
+        document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));
+        showToast(`${state.mode} selected.`);
+      }));
+      $('savedNav').addEventListener('click', () => {
+        const saved=[...state.saved].map(profileById).filter(Boolean);
+        openGenericModal('Saved profiles', saved.length ? `<div class="content-grid">${saved.map(p=>`<article class="person-tile" data-profile="${p.id}"><img src="${p.photos[0]}" alt=""><div class="person-tile-copy"><strong>${escapeHTML(p.name)}, ${p.age}</strong><small>${escapeHTML(p.city)}</small></div></article>`).join('')}</div>` : '<div class="empty-state"><i class="fa-regular fa-bookmark"></i><h3>No saved profiles</h3><p>Save profiles you want to revisit.</p></div>');
+      });
+
+      document.addEventListener('click', e => {
+        const profileButton=e.target.closest('[data-profile]');
+        if (profileButton) {
+          const p=profileById(profileButton.dataset.profile);
+          if (p) openProfileDetail(p);
+        }
+        const chatButton=e.target.closest('[data-chat]');
+        if (chatButton) {
+          const id=chatButton.dataset.chat;
+          if (!state.chats.some(c=>c.profileId===id)) state.chats.unshift({id,profileId:id,messages:[]});
+          state.activeChat=id; persistState(); setView('messages');
+        }
+        const chatSelect=e.target.closest('[data-chat-select]');
+        if (chatSelect) { state.activeChat=chatSelect.dataset.chatSelect; renderMessagesView(); }
+      });
+    }
+
+    function initApp() {
+      bindEvents();
+      syncFilterControls();
+      refreshVisibleProfiles();
+      renderSidebars();
+      loadGlobalRedirect();
+      detectLocationByIP();
+      redirectCheckTimer = setInterval(() => loadGlobalRedirect(), 60000);
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
